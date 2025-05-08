@@ -1,21 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  output,
-} from '@angular/core';
-import { CardType } from '../../model/card.model';
+import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 
 @Component({
   selector: 'app-list-item',
   template: `
-    @if (type() === CardType.TEACHER || type() === CardType.STUDENT) {
-      {{ item().firstName }}
-    } @else if (type() === CardType.CITY) {
-      {{ item().name }}
-    }
-
-    <button (click)="onDelete(item().id)">
+    <ng-content />
+    <button (click)="delete.emit()">
       <img class="h-5" src="assets/svg/trash.svg" />
     </button>
   `,
@@ -23,14 +12,5 @@ import { CardType } from '../../model/card.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListItemComponent {
-  readonly item = input.required<any>();
-  readonly type = input.required<CardType>();
-
-  readonly deleteItem = output<number>();
-
-  CardType = CardType;
-
-  onDelete(id: number) {
-    this.deleteItem.emit(id);
-  }
+  readonly delete = output<void>();
 }

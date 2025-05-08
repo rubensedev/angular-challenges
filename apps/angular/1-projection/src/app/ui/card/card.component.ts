@@ -1,11 +1,13 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  contentChild,
   input,
   output,
+  TemplateRef,
 } from '@angular/core';
-import { CardType } from '../../model/card.model';
-import { ListItemComponent } from '../list-item/list-item.component';
+import { CardRowDirective } from './card-row.directive';
 
 @Component({
   selector: 'app-card',
@@ -13,39 +15,29 @@ import { ListItemComponent } from '../list-item/list-item.component';
     <ng-content select="card-img"></ng-content>
 
     <section>
-      @for (item of list(); track item) {
-        <app-list-item
-          [item]="item"
-          [type]="type()"
-          (deleteItem)="handleDelete($event)"></app-list-item>
+      @for (item of items(); track item.id) {
+        <ng-template
+          [ngTemplateOutlet]="rowTemplate()"
+          [ngTemplateOutletContext]="{ $implicit: item }" />
       }
     </section>
 
     <button
       class="rounded-sm border border-blue-500 bg-blue-300 p-2"
-      (click)="onAdd()"
+      (click)="add.emit()"
       ngProjectAs="card-add-btn">
       Add
     </button>
   `,
+  imports: [NgTemplateOutlet],
   host: {
     class: 'flex w-fit flex-col gap-3 rounded-md border-2 border-black p-4',
   },
-  imports: [ListItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CardComponent {
-  readonly list = input<any[] | null>(null);
-  readonly type = input.required<CardType>();
+export class CardComponent<T extends { id: number }> {
+  readonly items = input<T[]>();
+  readonly add = output();
 
-  readonly addNewItem = output<any>();
-  readonly delete = output<number>();
-
-  onAdd() {
-    this.addNewItem.emit('');
-  }
-
-  handleDelete(id: number) {
-    this.delete.emit(id);
-  }
+  rowTemplate = contentChild.required(CardRowDirective, { read: TemplateRef });
 }

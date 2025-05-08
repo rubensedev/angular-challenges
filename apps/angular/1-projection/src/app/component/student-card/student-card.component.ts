@@ -1,25 +1,29 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { randStudent } from '../../data-access/fake-http.service';
+import {
+  FakeHttpService,
+  randStudent,
+} from '../../data-access/fake-http.service';
 import { StudentStore } from '../../data-access/student.store';
-import { CardType } from '../../model/card.model';
+import { CardRowDirective } from '../../ui/card/card-row.directive';
 import { CardComponent } from '../../ui/card/card.component';
+import { ListItemComponent } from '../../ui/list-item/list-item.component';
 
 @Component({
   selector: 'app-student-card',
   template: `
-    <app-card
-      [list]="students()"
-      [type]="cardType"
-      (addNewItem)="addStudent()"
-      (delete)="deleteStudent($event)"
-      class="bg-light-green">
+    <app-card [items]="students()" (add)="addStudent()" class="bg-light-green">
       <img
         ngSrc="assets/img/student.webp"
         width="200"
         height="200"
         priority
         ngProjectAs="card-img" />
+      <ng-template [cardRow]="students()" let-student>
+        <app-list-item (delete)="deleteStudent(student.id)">
+          {{ student.firstName }}
+        </app-list-item>
+      </ng-template>
     </app-card>
   `,
   styles: [
@@ -29,14 +33,23 @@ import { CardComponent } from '../../ui/card/card.component';
       }
     `,
   ],
-  imports: [CardComponent, NgOptimizedImage],
+  imports: [
+    NgOptimizedImage,
+    CardRowDirective,
+    CardComponent,
+    ListItemComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StudentCardComponent {
   private store = inject(StudentStore);
+  private http = inject(FakeHttpService);
 
   readonly students = this.store.students;
-  readonly cardType = CardType.STUDENT;
+
+  constructor() {
+    this.http.fetchStudents$.subscribe((s) => this.store.addAll(s));
+  }
 
   addStudent() {
     this.store.addOne(randStudent());

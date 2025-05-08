@@ -1,25 +1,29 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { randTeacher } from '../../data-access/fake-http.service';
+import {
+  FakeHttpService,
+  randTeacher,
+} from '../../data-access/fake-http.service';
 import { TeacherStore } from '../../data-access/teacher.store';
-import { CardType } from '../../model/card.model';
+import { CardRowDirective } from '../../ui/card/card-row.directive';
 import { CardComponent } from '../../ui/card/card.component';
+import { ListItemComponent } from '../../ui/list-item/list-item.component';
 
 @Component({
   selector: 'app-teacher-card',
   template: `
-    <app-card
-      [list]="teachers()"
-      [type]="cardType"
-      (addNewItem)="addTeacher()"
-      (delete)="deleteTeacher($event)"
-      class="bg-light-red">
+    <app-card [items]="teachers()" (add)="addTeacher()" class="bg-light-red">
       <img
         ngSrc="assets/img/teacher.png"
         width="200"
         height="200"
-        priority
-        ngProjectAs="card-img" />
+        ngProjectAs="card-img"
+        priority />
+      <ng-template [cardRow]="teachers()" let-teacher>
+        <app-list-item (delete)="deleteTeacher(teacher.id)">
+          {{ teacher.firstName }}
+        </app-list-item>
+      </ng-template>
     </app-card>
   `,
   styles: [
@@ -29,14 +33,23 @@ import { CardComponent } from '../../ui/card/card.component';
       }
     `,
   ],
-  imports: [CardComponent, NgOptimizedImage],
+  imports: [
+    NgOptimizedImage,
+    CardRowDirective,
+    CardComponent,
+    ListItemComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TeacherCardComponent {
   private store = inject(TeacherStore);
+  private http = inject(FakeHttpService);
 
   readonly teachers = this.store.teachers;
-  readonly cardType = CardType.TEACHER;
+
+  constructor() {
+    this.http.fetchTeachers$.subscribe((t) => this.store.addAll(t));
+  }
 
   addTeacher() {
     this.store.addOne(randTeacher());
